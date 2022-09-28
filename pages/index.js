@@ -1,19 +1,49 @@
-import { useState } from "react";
 import { useRouter } from "next/router";
-import Auth from "../utils/auth";
-import { validateEmail } from "../utils/helpers";
+import { useState } from "react";
+import { useLazyQuery } from "@apollo/client";
+import { LOGIN_USER } from "../graphql/queries";
 
-export default function Login() {
-  const [message, setMessage] = useState("");
+export default function Login(props) {
   const router = useRouter();
-  const submitForm = (e) => {
+  const [username, setUsername] = useState();
+  const [password, setPassword] = useState();
+  const [signin] = useLazyQuery(LOGIN_USER);
+  const [err, setErr] = useState("");
+
+  const submitForm = async (e) => {
     e.preventDefault();
-    const formDate = new FormData();
-    let values = {};
-    router.push({
-      pathname: "/chat",
-      query: values,
+
+    if (!username) {
+      setErr("You must enter a username");
+      return;
+    }
+
+    if (!password) {
+      setErr("You must enter a password");
+      return;
+    }
+    const loggedInUser = await signin({
+      variables: {
+        username,
+        password,
+      },
     });
+    if (loggedInUser.data?.user.length) {
+      window.localStorage.setItem(
+        "user",
+        JSON.stringify(loggedInUser.data.user[0])
+      );
+      setUsername("");
+      setPassword("");
+      router.push({
+        pathname: "/chat",
+        query: {
+          username,
+        },
+      });
+    } else {
+      setErr("You dont exist");
+    }
   };
 
   const signUpForm = (e) => {
@@ -24,7 +54,7 @@ export default function Login() {
 
   return (
     <div className="bg-indigo-100 min-h-screen flex flex-col items-center place-content-center block">
-      <div className="text-center text-sky-700 text-8xl shadow-xl mb-10 p-5 rounded-full">
+      <div className="text-center text-sky-700 bg-white text-8xl shadow-xl mb-10 p-5 rounded-full">
         Talky-Talky 📱
       </div>
       <div>
@@ -35,21 +65,24 @@ export default function Login() {
           <div className="flex justify-between flex-col">
             <input
               className="mb-3 p-2 border border-black rounded hover:text-indigo-300"
-              placeholder="Email"
+              placeholder="Username"
+              type="text"
+              value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
             <input
               className="p-2 border border-black rounded hover:text-indigo-300"
               type="password"
               placeholder="Password"
-              onChange={(e) => setSecret(e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-            <h2 className="p-2 my-3 text-xl">{message}</h2>
+            <h2 className="text-xl my-2 text-slate-700">{err}</h2>
           </div>
           <div className="flex flex-col place-content-center">
             <button
               type="submit"
-              className="p-2 mb-3 border bg-white text-sky-700 border-black rounded hover:bg-sky-700 hover:text-white"
+              className="p-2 my-3 border bg-white text-sky-700 border-black rounded hover:bg-sky-700 hover:text-white"
             >
               Login
             </button>
@@ -57,7 +90,7 @@ export default function Login() {
         </form>
         <div className="flex justify-center">
           <button
-            onClickz={(e) => signUpForm(e)}
+            onClick={(e) => signUpForm(e)}
             type="submit"
             className="p-2 border text-sky-700 hover:text-white"
           >

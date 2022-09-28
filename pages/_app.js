@@ -1,11 +1,12 @@
 import "../styles/globals.css";
-import { ContextProvider } from "../context";
+import { ApolloProvider } from "@apollo/client";
+import client from "../apollo-client";
 
 function MyApp({ Component, pageProps }) {
   return (
-    <ContextProvider>
+    <ApolloProvider client={client}>
       <Component {...pageProps} />
-    </ContextProvider>
+    </ApolloProvider>
   );
 }
 
